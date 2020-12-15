@@ -3,7 +3,7 @@ from institutions.parser import InstitutionsOverboughtParser, InstitutionsOverso
 if __name__ == '__main__':
 
     overbought_parser = InstitutionsOverboughtParser()
-    overbought_parser.parse()
+    overbought_parser.parse().save_to_db()
 
     oversold_parser = InstitutionsOversoldParser()
-    oversold_parser.parse()
+    oversold_parser.parse().save_to_db()
