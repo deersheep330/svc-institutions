@@ -10,7 +10,7 @@ class InstitutionsParser():
 
     def __init__(self):
         self.max_count = 12
-        self.url = 'https://www.cnyes.com/twstock/a_institutional8.aspx'
+        self.url = 'https://www.cnyes.com/twstock/a_institutional7.aspx'
         self.symbol_xpath = "//*[contains(@class, 'fLtBx')]//tbody//tr//td[1]//a"
         self.foreign_xpath = "//*[contains(@class, 'fLtBx')]//tbody//tr//td[3]"
         self.quantity_xpath = "//*[contains(@class, 'fLtBx')]//tbody//tr//td[6]"
