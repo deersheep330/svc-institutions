@@ -27,7 +27,8 @@ class InstitutionsParser():
 
     def parse(self):
         print(f'==> parse page: {self.url}')
-        resp = requests.get(self.url)
+        resp = requests.get(self.url, timeout=60)
+        resp.raise_for_status()
         content = resp.text
         tree = etree.HTML(content)
 
