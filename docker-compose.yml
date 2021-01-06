@@ -7,6 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
+      - ./api:/home/app/api
       - ./institutions:/home/app/institutions
       - ./main.py:/home/app/main.py
 

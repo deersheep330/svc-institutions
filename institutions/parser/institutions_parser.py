@@ -2,13 +2,20 @@ from pprint import pprint
 from datetime import datetime
 import requests
 from lxml import etree
+import grpc
 
-from institutions.db import create_engine, get_db_hostname, start_session, insert
-from institutions.models import TwseOverBought
+from institutions.utils import get_grpc_hostname
+from api.protos import database_pb2_grpc
+from api.protos.database_pb2 import BoughtOrSold
+from api.protos.protobuf_datatype_utils import datetime_to_timestamp
 
 class InstitutionsParser():
 
     def __init__(self):
+
+        channel = grpc.insecure_channel(f'{get_grpc_hostname()}:6565')
+        self.stub = database_pb2_grpc.DatabaseStub(channel)
+
         self.max_count = 12
         self.url = 'https://www.cnyes.com/twstock/a_institutional7.aspx'
         self.symbol_xpath = "//*[contains(@class, 'fLtBx')]//tbody//tr//td[1]//a"
@@ -17,7 +24,7 @@ class InstitutionsParser():
         self.dict = {}
         self.date_xpath = "//*[contains(@class, 'tydate')]"
         self.date = None
-        self.model = TwseOverBought
+        self.model = 'twse_over_bought'
 
     def exclude_condition(self, input):
         if input <= 0:
@@ -49,18 +56,31 @@ class InstitutionsParser():
         return self
 
     def save_to_db(self):
-        engine = create_engine('mysql+pymysql', 'root', 'admin', get_db_hostname(), '3306', 'mydb')
-        session = start_session(engine)
 
         for key, value in self.dict.items():
             _dict = {
                 'symbol': key,
-                'date': self.date,
+                'date': datetime_to_timestamp(self.date),
                 'quantity': value
             }
             try:
-                insert(session, self.model, _dict)
-            except Exception as e:
-                print(f'insert entry error: {e}')
-        session.commit()
-        session.close()
+                if self.model == 'twse_over_bought':
+                    rowcount = self.stub.insert_twse_over_bought(BoughtOrSold(
+                        symbol=_dict['symbol'],
+                        date=_dict['date'],
+                        quantity=_dict['quantity']
+                    ))
+                    print(rowcount)
+                elif self.model == 'twse_over_sold':
+                    rowcount = self.stub.insert_twse_over_sold(BoughtOrSold(
+                        symbol=_dict['symbol'],
+                        date=_dict['date'],
+                        quantity=_dict['quantity']
+                    ))
+                    print(rowcount)
+                else:
+                    raise Exception(f'unsupported model type: {self.model}')
+            except grpc.RpcError as e:
+                status_code = e.code()
+                print(e.details())
+                print(status_code.name, status_code.value)
